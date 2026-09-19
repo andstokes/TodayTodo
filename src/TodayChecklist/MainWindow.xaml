@@ -1,0 +1,533 @@
+<Window x:Class="TodayChecklist.MainWindow"
+        x:Name="RootWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:TodayChecklist.ViewModels"
+        Title="今日清单"
+        Icon="Assets/TodayChecklist.ico"
+        Width="360"
+        Height="560"
+        MinWidth="320"
+        MinHeight="420"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="CanResizeWithGrip"
+        ShowInTaskbar="False"
+        PreviewKeyDown="MainWindow_PreviewKeyDown"
+        Topmost="False">
+  <Window.Resources>
+    <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+    <SolidColorBrush x:Key="PageBrush" Color="#FFF7F9FC" />
+    <SolidColorBrush x:Key="TaskBrush" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="SoftBrush" Color="#FFE9EEF5" />
+    <SolidColorBrush x:Key="LineBrush" Color="#FFD9E1EC" />
+    <SolidColorBrush x:Key="PrimaryTextBrush" Color="#FF253247" />
+    <SolidColorBrush x:Key="SecondaryTextBrush" Color="#FF69788F" />
+    <SolidColorBrush x:Key="PeriodAccentBrush" Color="#FF3978C9" />
+    <SolidColorBrush x:Key="PeriodActiveBackgroundBrush" Color="#FFE8F1FF" />
+    <SolidColorBrush x:Key="PeriodInactiveBrush" Color="#FF8793A3" />
+    <SolidColorBrush x:Key="PeriodInactiveBackgroundBrush" Color="#FFEEF1F5" />
+
+    <Style TargetType="Button">
+      <Setter Property="Background" Value="{DynamicResource SoftBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="9,6" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Margin" Value="2" />
+    </Style>
+    <Style x:Key="IconButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+      <Setter Property="Width" Value="32" />
+      <Setter Property="Height" Value="32" />
+      <Setter Property="Padding" Value="7" />
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style TargetType="TextBox">
+      <Setter Property="Padding" Value="8,6" />
+      <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Background" Value="{DynamicResource TaskBrush}" />
+    </Style>
+    <Style x:Key="PeriodToggleStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+      <Setter Property="Width" Value="34" />
+      <Setter Property="Height" Value="30" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Foreground" Value="{DynamicResource PeriodInactiveBrush}" />
+      <Setter Property="Background" Value="{DynamicResource PeriodInactiveBackgroundBrush}" />
+      <Setter Property="ToolTip" Value="显示时段分隔线（Ctrl+Shift+D）" />
+      <Setter Property="AutomationProperties.Name" Value="时段分隔线已关闭，点击显示" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="ToggleSurface" Background="{TemplateBinding Background}" CornerRadius="7"
+                    BorderThickness="1" BorderBrush="Transparent" SnapsToDevicePixels="True">
+              <Canvas Width="34" Height="30" HorizontalAlignment="Center" VerticalAlignment="Center"
+                      IsHitTestVisible="False">
+                <Path x:Name="StateGlyph"
+                      Stroke="{TemplateBinding Foreground}" StrokeThickness="1.7"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                      Data="M9,9 L24,9 M9,15 L24,15 M9,21 L24,21 M9,24 L25,6" />
+              </Canvas>
+            </Border>
+            <ControlTemplate.Triggers>
+              <DataTrigger Binding="{Binding ShowDayDividers}" Value="True">
+                <Setter TargetName="StateGlyph" Property="Data"
+                        Value="M9,9 L24,9 M9,15 L24,15 M9,21 L15,21 M20,21 L23,24 L28,18" />
+              </DataTrigger>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="ToggleSurface" Property="BorderBrush" Value="{DynamicResource PeriodAccentBrush}" />
+              </Trigger>
+              <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter TargetName="ToggleSurface" Property="BorderBrush" Value="{DynamicResource PeriodAccentBrush}" />
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="ToggleSurface" Property="Opacity" Value="0.75" />
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="ToggleSurface" Property="Opacity" Value="0.45" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding ShowDayDividers}" Value="True">
+          <Setter Property="Foreground" Value="{DynamicResource PeriodAccentBrush}" />
+          <Setter Property="Background" Value="{DynamicResource PeriodActiveBackgroundBrush}" />
+          <Setter Property="ToolTip" Value="隐藏时段分隔线（Ctrl+Shift+D）" />
+          <Setter Property="AutomationProperties.Name" Value="时段分隔线已开启，点击隐藏" />
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+  </Window.Resources>
+
+  <Border x:Name="Card"
+          Background="{DynamicResource PageBrush}"
+          BorderBrush="{DynamicResource LineBrush}"
+          BorderThickness="1"
+          CornerRadius="14"
+          Padding="14">
+    <Grid>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+
+      <Grid Grid.Row="0" MouseLeftButtonDown="Header_MouseLeftButtonDown">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Text="{Binding DateText}"
+                   FontSize="17"
+                   FontWeight="SemiBold"
+                   VerticalAlignment="Center"
+                   Foreground="{DynamicResource PrimaryTextBrush}" />
+        <StackPanel Grid.Column="1" Orientation="Horizontal">
+          <Button Style="{StaticResource IconButtonStyle}"
+                  Click="HistoryButton_Click"
+                  ToolTip="历史记录"
+                  AutomationProperties.Name="历史记录">
+            <Viewbox Width="19" Height="19">
+              <Canvas Width="24" Height="24">
+                <Rectangle Canvas.Left="3"
+                           Canvas.Top="5"
+                           Width="18"
+                           Height="16"
+                           RadiusX="2"
+                           RadiusY="2"
+                           Fill="Transparent"
+                           Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                           StrokeThickness="1.8" />
+                <Line X1="3" Y1="10" X2="21" Y2="10"
+                      Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                      StrokeThickness="1.8" />
+                <Line X1="8" Y1="3" X2="8" Y2="7"
+                      Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                      StrokeThickness="1.8"
+                      StrokeStartLineCap="Round"
+                      StrokeEndLineCap="Round" />
+                <Line X1="16" Y1="3" X2="16" Y2="7"
+                      Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                      StrokeThickness="1.8"
+                      StrokeStartLineCap="Round"
+                      StrokeEndLineCap="Round" />
+                <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                      StrokeThickness="1.8"
+                      StrokeStartLineCap="Round"
+                      StrokeEndLineCap="Round"
+                      StrokeLineJoin="Round"
+                      Data="M7,15 L10.2,18 L17,12.5" />
+              </Canvas>
+            </Viewbox>
+          </Button>
+          <Button Style="{StaticResource IconButtonStyle}"
+                  Click="SettingsButton_Click"
+                  ToolTip="设置"
+                  AutomationProperties.Name="设置">
+            <Viewbox Width="18" Height="18">
+              <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                    Data="M19.14,12.94 A7.43,7.43 0 0 0 19.19,12 A7.43,7.43 0 0 0 19.14,11.06 L21.17,9.48 L19.17,6.02 L16.78,6.98 A7.31,7.31 0 0 0 15.16,6.04 L14.8,3.5 L10.8,3.5 L10.44,6.04 A7.31,7.31 0 0 0 8.82,6.98 L6.43,6.02 L4.43,9.48 L6.46,11.06 A7.43,7.43 0 0 0 6.41,12 A7.43,7.43 0 0 0 6.46,12.94 L4.43,14.52 L6.43,17.98 L8.82,17.02 A7.31,7.31 0 0 0 10.44,17.96 L10.8,20.5 L14.8,20.5 L15.16,17.96 A7.31,7.31 0 0 0 16.78,17.02 L19.17,17.98 L21.17,14.52 Z M12.8,15.5 A3.5,3.5 0 1 1 12.8,8.5 A3.5,3.5 0 0 1 12.8,15.5 Z" />
+            </Viewbox>
+          </Button>
+          <Button Style="{StaticResource IconButtonStyle}"
+                  Click="HideButton_Click"
+                  ToolTip="隐藏到系统托盘"
+                  AutomationProperties.Name="隐藏到系统托盘">
+            <Viewbox Width="19" Height="19">
+              <Grid Width="24" Height="24">
+                <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                      StrokeThickness="1.8"
+                      StrokeStartLineCap="Round"
+                      StrokeEndLineCap="Round"
+                      Data="M2,12 C4.8,7.5 8,5.5 12,5.5 C16,5.5 19.2,7.5 22,12 C19.2,16.5 16,18.5 12,18.5 C8,18.5 4.8,16.5 2,12 Z M9.5,12 A2.5,2.5 0 1 0 14.5,12 A2.5,2.5 0 1 0 9.5,12" />
+                <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                      StrokeThickness="2"
+                      StrokeStartLineCap="Round"
+                      StrokeEndLineCap="Round"
+                      Data="M4,4 L20,20" />
+              </Grid>
+            </Viewbox>
+          </Button>
+        </StackPanel>
+      </Grid>
+
+      <StackPanel Grid.Row="1">
+        <Border x:Name="RecoveryBanner"
+                Background="#FFFFE8C7"
+                CornerRadius="6"
+                Padding="8"
+                Margin="0,10,0,0"
+                Visibility="Collapsed">
+          <TextBlock Text="数据文件无法安全恢复，当前以只读模式打开。原文件不会被覆盖。"
+                     Foreground="#FF704A00"
+                     TextWrapping="Wrap" />
+        </Border>
+        <Border x:Name="TestModeBanner"
+                Background="#FFDDF4E6"
+                BorderBrush="#FF75B68D"
+                BorderThickness="1"
+                CornerRadius="6"
+                Padding="8"
+                Margin="0,10,0,0"
+                Visibility="Collapsed"
+                AutomationProperties.Name="隔离测试模式提示">
+          <StackPanel>
+            <TextBlock Text="隔离测试模式"
+                       Foreground="#FF215D38"
+                       FontWeight="SemiBold" />
+            <TextBlock x:Name="TestModePathText"
+                       Margin="0,3,0,0"
+                       Foreground="#FF315F42"
+                       FontSize="11"
+                       TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+      </StackPanel>
+
+      <Grid Grid.Row="2" Margin="0,12,0,6">
+        <ListBox x:Name="TaskList"
+                 ItemsSource="{Binding Rows}"
+                 AllowDrop="True"
+                 PreviewMouseLeftButtonDown="TaskList_PreviewMouseLeftButtonDown"
+                 PreviewMouseMove="TaskList_PreviewMouseMove"
+                 DragOver="TaskList_DragOver"
+                 Drop="TaskList_Drop"
+                 BorderThickness="0"
+                 Background="Transparent"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+          <ListBox.ItemContainerStyle>
+            <Style TargetType="ListBoxItem">
+              <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+              <Setter Property="Padding" Value="0" />
+              <Setter Property="Margin" Value="0,0,0,6" />
+              <Setter Property="Background" Value="Transparent" />
+              <Setter Property="BorderThickness" Value="0" />
+              <Setter Property="IsTabStop" Value="True" />
+            </Style>
+          </ListBox.ItemContainerStyle>
+          <ListBox.Resources>
+            <DataTemplate DataType="{x:Type vm:DayDividerViewModel}">
+              <Grid Margin="0,2" Background="Transparent" MinHeight="36"
+                    AutomationProperties.Name="{Binding Title}">
+                <Grid.Style>
+                  <Style TargetType="Grid">
+                    <Setter Property="Cursor" Value="SizeNS" />
+                    <Style.Triggers>
+                      <DataTrigger Binding="{Binding CanDrag}" Value="False">
+                        <Setter Property="Cursor" Value="Arrow" />
+                      </DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </Grid.Style>
+                <Border Height="2" VerticalAlignment="Top" Background="#FF4F88C6"
+                        Visibility="{Binding ShowDropBefore, Converter={StaticResource BoolToVisibilityConverter}}" />
+                <Grid Margin="8,9">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+                  <Border Height="1" VerticalAlignment="Center" Background="{DynamicResource LineBrush}" />
+                  <TextBlock Grid.Column="1" Text="{Binding Title}" FontWeight="SemiBold"
+                             TextAlignment="Center" VerticalAlignment="Center" Margin="10,0">
+                    <TextBlock.Style>
+                      <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+                        <Style.Triggers>
+                          <DataTrigger Binding="{Binding CanDrag}" Value="True">
+                            <Setter Property="FontFamily" Value="Microsoft YaHei UI" />
+                            <Setter Property="FontSize" Value="13" />
+                            <Setter Property="Foreground" Value="{DynamicResource PeriodAccentBrush}" />
+                          </DataTrigger>
+                        </Style.Triggers>
+                      </Style>
+                    </TextBlock.Style>
+                  </TextBlock>
+                  <Border Grid.Column="2" Height="1" VerticalAlignment="Center"
+                          Background="{DynamicResource LineBrush}" />
+                </Grid>
+                <Border Height="2" VerticalAlignment="Bottom" Background="#FF4F88C6"
+                        Visibility="{Binding ShowDropAfter, Converter={StaticResource BoolToVisibilityConverter}}" />
+              </Grid>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:TaskItemViewModel}">
+              <Grid>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Border Grid.Row="0" Height="2" Background="#FF4F88C6" CornerRadius="1">
+                  <Border.Style>
+                    <Style TargetType="Border">
+                      <Setter Property="Visibility" Value="Collapsed" />
+                      <Style.Triggers>
+                        <DataTrigger Binding="{Binding ShowDropBefore}" Value="True">
+                          <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                      </Style.Triggers>
+                    </Style>
+                  </Border.Style>
+                </Border>
+                <Border Grid.Row="1"
+                        Margin="0,2"
+                        CornerRadius="8"
+                        Padding="10"
+                        BorderBrush="{DynamicResource LineBrush}"
+                        BorderThickness="1"
+                        MouseLeftButtonDown="TaskCard_MouseLeftButtonDown">
+                  <Border.Style>
+                    <Style TargetType="Border">
+                      <Setter Property="Background" Value="{DynamicResource TaskBrush}" />
+                      <Setter Property="Cursor" Value="SizeAll" />
+                      <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsCompleted}" Value="True">
+                          <Setter Property="Cursor" Value="Arrow" />
+                          <Setter Property="Background" Value="{DynamicResource SoftBrush}" />
+                          <Setter Property="Opacity" Value="0.55" />
+                        </DataTrigger>
+                      </Style.Triggers>
+                    </Style>
+                  </Border.Style>
+                  <Border.ContextMenu>
+                    <ContextMenu>
+                      <MenuItem Header="删除" Click="DeleteMenuItem_Click" />
+                    </ContextMenu>
+                  </Border.ContextMenu>
+                  <Grid>
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="Auto" />
+                      <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <CheckBox IsChecked="{Binding IsCompleted, Mode=OneWay}"
+                              Click="TaskCheckBox_Click"
+                              VerticalAlignment="Top"
+                              Margin="0,3,9,0"
+                              AutomationProperties.Name="切换任务完成状态" />
+                    <StackPanel Grid.Column="1">
+                      <TextBlock Text="{Binding Title}" TextWrapping="Wrap" FontSize="14" Foreground="{DynamicResource PrimaryTextBrush}">
+                        <TextBlock.Style>
+                          <Style TargetType="TextBlock">
+                            <Style.Triggers>
+                              <DataTrigger Binding="{Binding IsCompleted}" Value="True">
+                                <Setter Property="TextDecorations" Value="Strikethrough" />
+                                <Setter Property="Foreground" Value="#FF8A94A3" />
+                              </DataTrigger>
+                            </Style.Triggers>
+                          </Style>
+                        </TextBlock.Style>
+                      </TextBlock>
+                      <TextBlock Text="{Binding Notes}"
+                                 Visibility="{Binding HasNotes, Converter={StaticResource BoolToVisibilityConverter}}"
+                                 Foreground="{DynamicResource SecondaryTextBrush}"
+                                 TextWrapping="Wrap"
+                                 Margin="0,3,0,0"
+                                 FontSize="12" />
+                      <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                        <TextBlock Text="↻ " Visibility="{Binding IsRecurring, Converter={StaticResource BoolToVisibilityConverter}}" Foreground="{DynamicResource SecondaryTextBrush}" />
+                        <TextBlock Text="{Binding RolloverText}" Visibility="{Binding HasRolledOver, Converter={StaticResource BoolToVisibilityConverter}}" Foreground="#FF9A681D" FontSize="11" />
+                      </StackPanel>
+                    </StackPanel>
+                  </Grid>
+                </Border>
+                <Border Grid.Row="2" Height="2" Background="#FF4F88C6" CornerRadius="1">
+                  <Border.Style>
+                    <Style TargetType="Border">
+                      <Setter Property="Visibility" Value="Collapsed" />
+                      <Style.Triggers>
+                        <DataTrigger Binding="{Binding ShowDropAfter}" Value="True">
+                          <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                      </Style.Triggers>
+                    </Style>
+                  </Border.Style>
+                </Border>
+              </Grid>
+            </DataTemplate>
+          </ListBox.Resources>
+        </ListBox>
+        <TextBlock Text="今天还没有任务。"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   Foreground="{DynamicResource SecondaryTextBrush}">
+          <TextBlock.Style>
+            <Style TargetType="TextBlock">
+              <Setter Property="Visibility" Value="Collapsed" />
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding ShowEmptyHint}" Value="True">
+                  <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </TextBlock.Style>
+        </TextBlock>
+      </Grid>
+
+      <Grid Grid.Row="3" Margin="0,4,0,6">
+        <Button x:Name="AddTaskButton"
+                Height="46"
+                FontSize="24"
+                Content="＋"
+                ToolTip="新增任务"
+                AutomationProperties.Name="新增任务"
+                Click="AddTaskButton_Click"
+                Background="Transparent"
+                BorderBrush="{DynamicResource LineBrush}"
+                BorderThickness="1">
+          <Button.Style>
+            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+              <Setter Property="Visibility" Value="Visible" />
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding Draft.IsActive, ElementName=RootWindow}" Value="True">
+                  <Setter Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Button.Style>
+        </Button>
+
+        <Border Background="{DynamicResource TaskBrush}"
+                BorderBrush="{DynamicResource LineBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="9">
+          <Border.Style>
+            <Style TargetType="Border">
+              <Setter Property="Visibility" Value="Collapsed" />
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding Draft.IsActive, ElementName=RootWindow}" Value="True">
+                  <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Border.Style>
+          <StackPanel>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+              <TextBox x:Name="DraftTitleBox"
+                       Text="{Binding Draft.Title, ElementName=RootWindow, UpdateSourceTrigger=PropertyChanged}"
+                       MaxLength="200"
+                       ToolTip="任务标题"
+                       KeyDown="DraftTitleBox_KeyDown" />
+              <Button Grid.Column="1" Content="✓" Click="SaveDraftButton_Click" ToolTip="保存任务" Padding="9,5" AutomationProperties.Name="保存任务" />
+              <Button Grid.Column="2" Content="×" Click="CancelDraftButton_Click" ToolTip="取消新增" Padding="9,5" AutomationProperties.Name="取消新增" />
+            </Grid>
+            <ToggleButton x:Name="DraftDetailsToggle"
+                          Content="备注与重复"
+                          IsChecked="{Binding Draft.IsExpanded, ElementName=RootWindow, Mode=TwoWay}"
+                          HorizontalAlignment="Left"
+                          Margin="0,7,0,0"
+                          Padding="7,3" />
+            <Grid Margin="0,7,0,0">
+              <Grid.Style>
+                <Style TargetType="Grid">
+                  <Setter Property="Visibility" Value="Collapsed" />
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding Draft.IsExpanded, ElementName=RootWindow}" Value="True">
+                      <Setter Property="Visibility" Value="Visible" />
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </Grid.Style>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+              </Grid.RowDefinitions>
+              <ComboBox x:Name="DraftRepeatBox" SelectedIndex="0" SelectionChanged="DraftRepeatBox_SelectionChanged" Padding="5">
+                <ComboBoxItem Content="不重复" />
+                <ComboBoxItem Content="每天" />
+                <ComboBoxItem Content="工作日" />
+                <ComboBoxItem Content="每周" />
+                <ComboBoxItem Content="每月" />
+              </ComboBox>
+              <TextBox x:Name="DraftNotesBox"
+                       Grid.Row="1"
+                       Margin="0,6,0,0"
+                       Text="{Binding Draft.Notes, ElementName=RootWindow, UpdateSourceTrigger=PropertyChanged}"
+                       MaxLength="2000"
+                       AcceptsReturn="True"
+                       MinHeight="48"
+                       MaxHeight="90"
+                       TextWrapping="Wrap"
+                       ToolTip="备注；按 Ctrl+Enter 保存"
+                       KeyDown="DraftNotesBox_KeyDown" />
+            </Grid>
+          </StackPanel>
+        </Border>
+      </Grid>
+
+      <Grid Grid.Row="4" Margin="0,4,0,0">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Text="{Binding SummaryText}" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryTextBrush}" />
+        <Button x:Name="DayDividerButton" Grid.Column="1" Style="{StaticResource PeriodToggleStyle}"
+                Click="DayDividerButton_Click" />
+        <Button Grid.Column="2" Content="撤销删除" Click="UndoButton_Click">
+          <Button.Style>
+            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+              <Setter Property="Visibility" Value="Collapsed" />
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding CanUndoDelete}" Value="True">
+                  <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </Button.Style>
+        </Button>
+      </Grid>
+    </Grid>
+  </Border>
+</Window>

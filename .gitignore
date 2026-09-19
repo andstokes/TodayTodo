@@ -1,0 +1,28 @@
+bin/
+obj/
+.vs/
+TestResults/
+artifacts/
+publish/
+*.user
+*.suo
+*.tmp
+*.log
+
+# 本地真实数据、备份与路径指针不得上传
+/TodayChecklist/
+**/data/tasks*.json
+**/backups/
+**/logs/
+**/settings.json
+**/settings.json.bak
+**/location.json
+**/location.last-good.json
+**/.todaychecklist-store.json
+
+# 本地凭据和开发环境
+.env
+.env.*
+*.pfx
+*.p12
+*.key

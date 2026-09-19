@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>TodayChecklist</AssemblyName>
+    <RootNamespace>TodayChecklist</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\TodayChecklist.ico</ApplicationIcon>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <Version>0.6.1</Version>
+    <Authors>TodayChecklist</Authors>
+    <Description>完全本地运行的 Windows 桌面每日待办清单。</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <Resource Include="Assets\TodayChecklist.ico" />
+  </ItemGroup>
+</Project>
